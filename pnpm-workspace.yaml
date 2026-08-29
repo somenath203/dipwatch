@@ -1,0 +1,11 @@
+minimumReleaseAge: 4320
+minimumReleaseAgeStrict: false
+minimumReleaseAgeIgnoreMissingTime: false
+blockExoticSubdeps: true
+trustPolicy: no-downgrade
+trustPolicyIgnoreAfter: 525600
+trustLockfile: false
+overrides:
+  "sharp": "0.35.3"
+allowBuilds:
+  unrs-resolver: true
