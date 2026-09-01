@@ -1,7 +1,9 @@
-import { LogIn, Rabbit, Shield, Bell } from "lucide-react";
+import { Rabbit, Shield, Bell, TrendingDown } from "lucide-react";
+import Link from "next/link";
 
-import { Button } from "@/components/ui/button";
 import AddProductForm from "./_components/AddProductForm";
+import AuthButton from "./_components/AuthButton";
+import { createClient } from "@/lib/supabase/server";
 
 
 const FEATURES = [
@@ -25,11 +27,14 @@ const FEATURES = [
 ];
 
 
-const Page = () => {
+const Page = async () => {
 
-  const detailsOfLoggedInUser = null;
+  const supabaseClient = await createClient();
 
-  const products = [];
+  const {data: { user }} = await supabaseClient?.auth?.getUser();
+
+
+  const allProductsScrapedByTheCurrentlyLoggedInUser = [];
 
   return (
     <main className="min-h-screen bg-linear-to-br from-orange-50 via-white to-orange-50">
@@ -39,16 +44,14 @@ const Page = () => {
 
         <div className="max-w-7xl mx-auto p-4 flex justify-between items-center">
 
-          <p className="text-xl font-semibold tracking-wide">EcomDeal<span className="font-bold text-orange-500 underline">Scrap</span></p>
-
-          <Button
-            variant="default"
-            size="sm"
-            className="bg-orange-500 hover:bg-orange-600 hover:cursor-pointer gap-2"
+          <Link
+            href="/"
+            className="text-xl font-semibold tracking-wide select-none"
           >
-            {/* 'Login' is the icon imported from lucide-react */}
-            <LogIn className="size-4" /> Sign In{" "}
-          </Button>
+            Dip<span className="font-bold text-orange-500">Watch</span>
+          </Link>
+
+          <AuthButton currentlyLoggedInUserDetails={user} />
 
         </div>
 
@@ -68,14 +71,16 @@ const Page = () => {
           <p className="text-xl text-gray-600 mb-12 max-w-2xl mx-auto">Track prices from any e-commerce site. Get instant alerts when prices drop. Save money effortlessly.</p>
 
           {/* product form */}
-          <AddProductForm user={detailsOfLoggedInUser} />
+          <AddProductForm user={user} />
 
           {/* features */}
-          {products?.length === 0 && (
+          {allProductsScrapedByTheCurrentlyLoggedInUser?.length === 0 && (
+
             <div className="grid md:grid-cols-3 gap-6 max-w-4xl mx-auto mt-16">
 
               {/* Displaying feature information as placeholder content when there are no products */}
               {FEATURES?.map(({ icon: Icon, title, description }) => (
+
                 <div key={title} className="bg-white p-6 rounded-xl border border-gray-200">
 
                   <div className="size-12 bg-orange-100 rounded-lg flex items-center justify-center mb-4 mx-auto">
@@ -89,13 +94,35 @@ const Page = () => {
                   <p className="text-sm text-gray-600">{description}</p>
 
                 </div>
+
               ))}
+
             </div>
           )}
 
         </div>
 
       </section>
+
+      {user && allProductsScrapedByTheCurrentlyLoggedInUser?.length === 0 && (
+
+        // The below 'section' will be displayed when the currently authenticated user has not tracked any products.
+
+        <section className="max-w-2xl mx-auto px-4 pb-20 text-center">
+
+          <div className="bg-white rounded-xl border-2 border-dashed border-gray-300 p-12">
+
+            <TrendingDown className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+
+            <h3 className="text-xl font-semibold text-gray-900 mb-2">No products yet</h3>
+
+            <p className="text-gray-600">Add your first product above to start tracking prices!</p>
+
+          </div>
+
+        </section>
+
+      )}
 
     </main>
   );

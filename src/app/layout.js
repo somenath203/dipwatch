@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata = {
-  title: "EcomDealScrap",
+  title: "DipWatch",
   description: "Track prices from any e-commerce site.",
 };
 
