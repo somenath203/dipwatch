@@ -97,7 +97,7 @@ export async function addOrUpdateScrapedProduct(formData) {
       .select("id, current_price_of_the_scraped_product")
       .eq("id_of_user_who_scraped_the_product", user?.id)
       .eq("url_of_the_scraped_product", urlOfTheWebsite)
-      .single();
+      .maybeSingle();
 
     /**
      * 'isUpdate' tells us whether the product already exists in the database

@@ -1,19 +1,15 @@
 import { Resend } from "resend";
 
+
 const resend = new Resend(process.env.RESEND_API_KEY);
 
-export async function sendPriceDropAlert(
-  userEmail,
-  product,
-  currentPriceInWebsiteRightNow,
-  priceStoredInDB,
-) {
+
+export async function sendPriceDropAlert(userEmail, product, currentPriceInWebsiteRightNow, priceStoredInDB) {
   try {
+    
     const priceDrop = priceStoredInDB - currentPriceInWebsiteRightNow;
 
-    const priceDropInPercentage = ((priceDrop / priceStoredInDB) * 100).toFixed(
-      1,
-    );
+    const priceDropInPercentage = ((priceDrop / priceStoredInDB) * 100).toFixed(1);
 
     const { data, error } = await resend.emails.send({
       from: "Acme <onboarding@resend.dev>",
