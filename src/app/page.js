@@ -4,6 +4,8 @@ import Link from "next/link";
 import AddProductForm from "./_components/AddProductForm";
 import AuthButton from "./_components/AuthButton";
 import { createClient } from "@/lib/supabase/server";
+import { getAllProducts } from "./actions";
+import ProductCard from "./_components/ProductCard";
 
 
 const FEATURES = [
@@ -34,7 +36,7 @@ const Page = async () => {
   const {data: { user }} = await supabaseClient?.auth?.getUser();
 
 
-  const allProductsScrapedByTheCurrentlyLoggedInUser = [];
+  const allProductsScrapedByTheCurrentlyLoggedInUser = user ? await getAllProducts() : [];
 
   return (
     <main className="min-h-screen bg-linear-to-br from-orange-50 via-white to-orange-50">
@@ -103,6 +105,33 @@ const Page = async () => {
         </div>
 
       </section>
+
+      {/* render all products of the currently logged in user */}
+      {user && allProductsScrapedByTheCurrentlyLoggedInUser?.length > 0 && (
+        <section className="max-w-7xl mx-auto px-4 pb-20">
+
+          <div className="flex items-center justify-between mb-6">
+
+            <h3 className="text-2xl font-bold text-gray-900">Your Tracked Products</h3>
+
+            <span className="text-sm text-gray-500">
+              {allProductsScrapedByTheCurrentlyLoggedInUser?.length} {allProductsScrapedByTheCurrentlyLoggedInUser?.length === 1 ? 'product' : 'products'}
+            </span>
+
+          </div>
+
+          <div className="grid gap-6 md:grid-cols-2 items-start">
+
+            {allProductsScrapedByTheCurrentlyLoggedInUser?.map((product) => (
+
+              <ProductCard key={product?.id} product={product} />
+
+            ))}
+            
+          </div>
+
+        </section>
+      )}
 
       {user && allProductsScrapedByTheCurrentlyLoggedInUser?.length === 0 && (
 

@@ -57,7 +57,9 @@ export async function addOrUpdateScrapedProduct(formData) {
     // scraping product data with firecrawl
     const extractedProductData = await scrapeProduct(urlOfTheWebsite);
 
-    if (!extractedProductData?.productName || !extractedProductData?.currentPrice) {
+    console.log("Extracted product data: ", extractedProductData);
+
+    if (!extractedProductData?.productName || extractedProductData?.currentPrice == null) {
 
       return {
         error: "Could not extract product information from this URL",
@@ -68,7 +70,11 @@ export async function addOrUpdateScrapedProduct(formData) {
 
     const currentPriceOfTheScrapedProduct = parseFloat(extractedProductData?.currentPrice);
 
+    console.log("Current Price: ", currentPriceOfTheScrapedProduct);
+
     const currencyCodeOfTheScrapedProduct = extractedProductData?.currencyCode || "USD";
+
+    console.log('Currency: ', currencyCodeOfTheScrapedProduct)
 
     /**
      * Check whether this product already exists in the database for the
@@ -93,7 +99,7 @@ export async function addOrUpdateScrapedProduct(formData) {
      * with the newly scraped price and determine whether the price has changed.
      */
     const { data: detailsOfTheProduct } = await supabaseClient
-      .from("products")
+      .from("products") 
       .select("id, current_price_of_the_scraped_product")
       .eq("id_of_user_who_scraped_the_product", user?.id)
       .eq("url_of_the_scraped_product", urlOfTheWebsite)
@@ -244,13 +250,19 @@ export async function addOrUpdateScrapedProduct(formData) {
      */
     if (shouldAddTheProductToHistory) {
 
-      await supabaseClient
+      const { error } = await supabaseClient
         .from("price_history_of_a_particular_product")
         .insert({
           id_of_the_product_whose_history_is_stored: product?.id,
           price_of_the_product: currentPriceOfTheScrapedProduct,
           currency: currencyCodeOfTheScrapedProduct,
         });
+
+      if (error) {
+
+        throw error;
+        
+      }
 
     }
 
@@ -316,6 +328,16 @@ export async function getAllProducts() {
   try {
 
     const supabaseClient = await createClient();
+
+    const { data: { user } } = await supabaseClient.auth.getUser();
+
+    if (!user) {
+
+      return {
+        error: "User is not authenticated to perform the action",
+      };
+
+    }
 
     const { data: allProductsOfTheCurrentlyAuthenticatedUser, error } =
       await supabaseClient

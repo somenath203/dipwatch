@@ -6,10 +6,13 @@ import { Loader2 } from "lucide-react";
 
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import AuthModal from "./AuthModal";
+import { addOrUpdateScrapedProduct } from "../actions";
 
 
 const AddProductForm = ({ user }) => {
 
+  const [showAuthModal, setShowAuthModal] = useState(false);
 
   const [urlInput, setUrlInput] = useState("");
 
@@ -22,7 +25,35 @@ const AddProductForm = ({ user }) => {
 
     try {
 
+      // If user is not logged in, then, show the 'auth modal'
+      if(!user) {
+
+        setShowAuthModal(true);
+
+        return;
+
+      }
+
       setLoading(true);
+
+      const formData = new FormData();
+
+      formData.append("urlOfTheWebsiteThatIsToBeScraped", urlInput);
+
+
+      const res = await addOrUpdateScrapedProduct(formData);
+
+      if (res?.error) {
+
+        toast.error(res?.error);
+
+      } else {
+
+        toast.success(res?.message || 'Product tracked successfully');
+
+        setUrlInput('');
+
+      }
 
     } catch (error) {
 
@@ -72,6 +103,7 @@ const AddProductForm = ({ user }) => {
       </form>
 
       {/* authentication modal */}
+      <AuthModal isOpenAuthDialog={showAuthModal} onCloseAuthDialog={() => setShowAuthModal(false)} />
       
     </>
   );
