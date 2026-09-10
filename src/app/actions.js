@@ -57,8 +57,6 @@ export async function addOrUpdateScrapedProduct(formData) {
     // scraping product data with firecrawl
     const extractedProductData = await scrapeProduct(urlOfTheWebsite);
 
-    console.log("Extracted product data: ", extractedProductData);
-
     if (!extractedProductData?.productName || extractedProductData?.currentPrice == null) {
 
       return {
