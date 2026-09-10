@@ -70,11 +70,7 @@ export async function addOrUpdateScrapedProduct(formData) {
 
     const currentPriceOfTheScrapedProduct = parseFloat(extractedProductData?.currentPrice);
 
-    console.log("Current Price: ", currentPriceOfTheScrapedProduct);
-
     const currencyCodeOfTheScrapedProduct = extractedProductData?.currencyCode || "USD";
-
-    console.log('Currency: ', currencyCodeOfTheScrapedProduct)
 
     /**
      * Check whether this product already exists in the database for the
@@ -99,7 +95,7 @@ export async function addOrUpdateScrapedProduct(formData) {
      * with the newly scraped price and determine whether the price has changed.
      */
     const { data: detailsOfTheProduct } = await supabaseClient
-      .from("products") 
+      .from("products")
       .select("id, current_price_of_the_scraped_product")
       .eq("id_of_user_who_scraped_the_product", user?.id)
       .eq("url_of_the_scraped_product", urlOfTheWebsite)
@@ -162,8 +158,36 @@ export async function addOrUpdateScrapedProduct(formData) {
      * If it does not exist:
      *     → Insert a new product.
      *
-     * 'onConflict' tells Supabase to use these two columns together
-     * to determine whether the product already exists.
+     */
+    /*
+     * PURPOSE of "onConflict: "id_of_user_who_scraped_the_product, url_of_the_scraped_product","
+     * 'onConflict' tells Supabase which columns together
+     * should be treated as a unique combination when performing
+     * the 'upsert' operation.
+     *
+     * Here, we use:
+     * 1. 'id_of_user_who_scraped_the_product'
+     * 2. 'url_of_the_scraped_product'
+     *
+     * This means the same user can have the same product URL
+     * only once in the 'products' table.
+     *
+     * If a product with the same user ID and product URL already exists:
+     *     → 'upsert' updates that existing product.
+     *
+     * If no product with the same user ID and product URL exists:
+     *     → 'upsert' creates a new product.
+     *
+     * Example:
+     *
+     * User ID: "user123"
+     * Product URL: "https://example.com/iphone-16"
+     *
+     * If this combination already exists:
+     *     → Update the existing product.
+     *
+     * If this combination does not exist:
+     *     → Insert a new product.
      */
     const { data: product, error } = await supabaseClient
       .from("products")
@@ -181,7 +205,7 @@ export async function addOrUpdateScrapedProduct(formData) {
         {
           onConflict:
             "id_of_user_who_scraped_the_product, url_of_the_scraped_product",
-          ignoreDuplicates: false,
+          ignoreDuplicates: false, // 'ignoreDuplicates: false' means that if a matching product already exists, 'upsert' will update it instead of ignoring the new data.
         },
       )
       .select()
@@ -193,75 +217,87 @@ export async function addOrUpdateScrapedProduct(formData) {
 
     }
 
-    /**
-     * Add the product's price to the 'price history' table when:
-     * - The product is being added for the first time, OR
-     * - The product already exists but its price has changed.
+    // getting today's date
+    const todaysDate = new Date().toLocaleDateString("en-CA", {
+      timeZone: "Asia/Kolkata",
+    });
+
+    // checking whether today's history row already exist in 'price_history_of_a_particular_product' table
+    const { data: todaysPriceHistoryDataForTheParticularProduct, error: checkHistoryProductError } = await supabaseClient
+      .from("price_history_of_a_particular_product")
+      .select("id")
+      .eq("id_of_the_product_whose_history_is_stored", product?.id)
+      .eq("tracked_date", todaysDate)
+      .maybeSingle();
+
+    /*
+     * .single() vs .maybeSingle()
+     * '.single()' expects exactly one row to be returned.
+     * If no row or more than one row is returned, Supabase returns an error.
      *
-     * Example:
+     * '.maybeSingle()' is similar to '.single()', but it also allows
+     * no row to be returned.
      *
-     * New product:
-     *     Product does not exist → Add its current price to price history.
+     * In our case, we use '.maybeSingle()' because the product may or may not
+     * already exist in the database.
      *
-     * Existing product:
-     *     Old price: ₹50,000
-     *     New price: ₹48,000
-     *     → Price has changed → Add ₹48,000 to price history.
+     * If the product exists:
+     *     → Returns that product.
      *
-     * If the price has not changed:
-     *     Old price: ₹50,000
-     *     New price: ₹50,000
-     *     → No new history record is needed.
+     * If the product does not exist:
+     *     → Returns null instead of treating it as an error.
+     *
+     * Therefore, '.maybeSingle()' is more suitable for checking
+     * whether a product already exists.
      */
 
-    /**
-     * Compare the product's current price stored in the database
-     * with the newly scraped price from the website.
-     *
-     * This helps us determine whether the product's price has changed
-     * since the last time it was scraped.
-     */
-    const shouldAddTheProductToHistory = !isUpdate || product?.current_price_of_the_scraped_product !== currentPriceOfTheScrapedProduct;
+    if (checkHistoryProductError) {
 
-    /**
-     * If the product is new or its price has changed, add the latest
-     * price to the price history table.
-     *
-     * This creates a record of the product's price at that particular time,
-     * so we can track how the price changes over time.
-     *
-     * Example:
-     *
-     * Product: iPhone 16
-     *
-     * First time scraped:
-     *     Price: ₹79,999
-     *     → Add ₹79,999 to price history.
-     *
-     * Later scraped:
-     *     Previous price: ₹79,999
-     *     New price: ₹74,999
-     *     → Price changed, so add ₹74,999 to price history.
-     *
-     * If the price has not changed:
-     *     Previous price: ₹74,999
-     *     New price: ₹74,999
-     *     → Do not add a new history record.
-     */
-    if (shouldAddTheProductToHistory) {
+      throw checkHistoryProductError;
 
-      const { error } = await supabaseClient
+    }
+
+    // if today's date's row for the particular product exists, just update the price
+    // else, insert a new row in 'price_history_of_a_particular_product for that product
+    if (todaysPriceHistoryDataForTheParticularProduct) {
+      // If 'todaysPriceHistoryData' is 'true', it means the price record for this
+      // date i.e. for 'today' already exist, so, in this case, just update the price
+      // in the same row in 'price_history_of_a_particular_product' table
+      const { error: updateProductHistoryError } = await supabaseClient
         .from("price_history_of_a_particular_product")
-        .insert({
-          id_of_the_product_whose_history_is_stored: product?.id,
+        .update({
           price_of_the_product: currentPriceOfTheScrapedProduct,
           currency: currencyCodeOfTheScrapedProduct,
-        });
+          tracked_date: todaysDate,
+          checked_at: new Date().toISOString(),
+        })
+        .eq("id", todaysPriceHistoryDataForTheParticularProduct?.id);
 
-      if (error) {
+      if (updateProductHistoryError) {
 
-        throw error;
-        
+        throw updateProductHistoryError;
+
+      }
+    } else {
+      // If todaysPriceHistoryData' is 'false', it means, today's price
+      // does not exist in 'price_history_of_a_particular_product' for the particular
+      // product. In that case, create a new row for this product's price
+
+      const { error: insertPriceHistoryForTheParticularProductError } =
+        await supabaseClient
+          .from("price_history_of_a_particular_product")
+          .insert({
+            id_of_the_product_whose_history_is_stored: product?.id,
+            price_of_the_product: currentPriceOfTheScrapedProduct,
+            currency: currencyCodeOfTheScrapedProduct,
+            tracked_date: todaysDate,
+            checked_at: new Date().toISOString(),
+          });
+
+      if (insertPriceHistoryForTheParticularProductError) {
+
+        throw insertPriceHistoryForTheParticularProductError;
+
       }
 
     }
@@ -273,7 +309,6 @@ export async function addOrUpdateScrapedProduct(formData) {
       product: product,
       message: isUpdate ? "Product updated successfully with the latest price!" : "Product added successfully!",
     };
-
   } catch (error) {
 
     console.log(error);
@@ -329,7 +364,7 @@ export async function getAllProducts() {
 
     const supabaseClient = await createClient();
 
-    const { data: { user } } = await supabaseClient.auth.getUser();
+    const {data: { user }} = await supabaseClient.auth.getUser();
 
     if (!user) {
 
@@ -376,7 +411,7 @@ export async function getPriceHistoryOfAParticularProduct(productId) {
         .from("price_history_of_a_particular_product")
         .select("*")
         .eq("id_of_the_product_whose_history_is_stored", productId)
-        .order("checked_at", { ascending: true });
+        .order("tracked_date", { ascending: true });
 
     if (error) {
 
@@ -393,5 +428,5 @@ export async function getPriceHistoryOfAParticularProduct(productId) {
     return [];
 
   }
-
+  
 }
