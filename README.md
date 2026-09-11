@@ -49,7 +49,7 @@ This makes it easier for users to keep an eye on products and avoid missing pote
 
 ---
 
-## ✨ Features
+## Features
 
 - **Product Price Tracking** — Add products using their URLs and track their current prices.
 - **Automatic Web Scraping** — Uses Firecrawl to retrieve the latest product information and price.
@@ -64,7 +64,7 @@ This makes it easier for users to keep an eye on products and avoid missing pote
 
 ---
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 | Technology       | Purpose                                 |
 | ---------------- | --------------------------------------- |
@@ -80,7 +80,7 @@ This makes it easier for users to keep an eye on products and avoid missing pote
 
 ---
 
-## 🔄 Application Workflow
+## Application Workflow
 
 The complete workflow of **DipWatch** can be understood in the following steps.
 
@@ -234,7 +234,7 @@ No Price Drop       Price Drop
 
 ---
 
-## 🚀 Get Started
+## Get Started
 
 Follow the steps below to run **DipWatch** locally.
 
@@ -306,7 +306,7 @@ You can now use **DipWatch** locally.
 
 ---
 
-## 🗄️ Supabase Setup
+## Supabase Setup
 
 DipWatch uses **Supabase** for authentication, database storage, and Cron Jobs. Before running the application, you need to create a Supabase project and set up the required database tables.
 
@@ -348,7 +348,7 @@ Create another table named `price_history_of_a_particular_product` with the foll
 
 ---
 
-## 🔐 Supabase RLS Security
+## Supabase RLS Security
 
 To protect users' data, Row Level Security (RLS) should be enabled for both database tables.
 
@@ -438,7 +438,7 @@ Refer to the screenshot below and paste the following code inside `using()`:
 
 ---
 
-## 📝 Commands to Be Executed in the SQL Editor
+## Commands to Be Executed in the SQL Editor
 
 Refer to all the screenshots below for the SQL commands that need to be executed in **Supabase's SQL Editor**.
 
@@ -454,7 +454,7 @@ Run the commands shown in the screenshots one by one to complete the required da
 
 ---
 
-## ⏰ Supabase Cron Job Setup
+## Supabase Cron Job Setup
 
 DipWatch uses **Supabase Cron Jobs** to automatically check tracked product prices every day at **9:00 AM**.
 
@@ -532,7 +532,7 @@ The final Cron Job configuration should look similar to the screenshots below.
 
 ---
 
-## 🖼️ Screenshots of the Application
+## Screenshots of the Application
 
 Below are some screenshots showcasing the different parts of the **DipWatch** application.
 
