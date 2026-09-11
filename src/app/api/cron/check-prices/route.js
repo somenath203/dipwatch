@@ -5,6 +5,7 @@ import { scrapeProduct } from "@/lib/firecrawl";
 import { sendPriceDropAlert } from "@/lib/resendemail";
 
 
+// THIS ROUTE WILL BE EXECUTED AUTOMATICALLY BY SUPABASE'S CRON JOB AT A SPECIFIED TIME INTERVAL TO CHECK FOR PRICE UPDATES.
 export async function POST(req) {
 
   try {
